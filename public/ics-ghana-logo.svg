@@ -1,0 +1,21 @@
+<svg width="240" height="240" viewBox="0 0 240 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="ring" x1="24" y1="24" x2="216" y2="216" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2F8A57"/>
+      <stop offset="1" stop-color="#1F5A3C"/>
+    </linearGradient>
+    <linearGradient id="inner" x1="66" y1="64" x2="174" y2="176" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#4BA96C"/>
+      <stop offset="1" stop-color="#256A46"/>
+    </linearGradient>
+  </defs>
+  <rect width="240" height="240" rx="120" fill="#F5FBF7"/>
+  <circle cx="120" cy="120" r="96" fill="white" stroke="url(#ring)" stroke-width="12"/>
+  <circle cx="120" cy="120" r="68" fill="url(#inner)"/>
+  <path d="M60 58C76 42 97 33 120 32C143 33 164 42 180 58" stroke="#2F8A57" stroke-width="8" stroke-linecap="round"/>
+  <path d="M60 182C76 198 97 207 120 208C143 207 164 198 180 182" stroke="#2F8A57" stroke-width="8" stroke-linecap="round"/>
+  <path d="M44 96C35 110 32 126 35 142" stroke="#2F8A57" stroke-width="8" stroke-linecap="round"/>
+  <path d="M196 96C205 110 208 126 205 142" stroke="#2F8A57" stroke-width="8" stroke-linecap="round"/>
+  <text x="120" y="132" text-anchor="middle" font-family="Georgia, serif" font-size="44" font-weight="700" fill="white">ICS</text>
+  <text x="120" y="168" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="600" fill="#E8FFF0">GHANA</text>
+</svg>
