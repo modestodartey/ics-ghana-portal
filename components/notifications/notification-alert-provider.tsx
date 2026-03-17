@@ -42,8 +42,15 @@ type NotificationAlertContextValue = {
 
 const NotificationAlertContext = createContext<NotificationAlertContextValue | undefined>(undefined);
 
-function buildPortalNotificationHref(role: "admin" | "student") {
-  return role === "admin" ? "/admin#notifications" : "/student#notifications";
+function buildPortalNotificationHref(role: "admin" | "student" | "staff") {
+  switch (role) {
+    case "admin":
+      return "/admin#notifications";
+    case "staff":
+      return "/staff#notifications";
+    default:
+      return "/student#notifications";
+  }
 }
 
 function getToastToneClasses(tone: NotificationToastTone) {

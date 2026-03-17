@@ -25,8 +25,8 @@ export function NotificationAlertSettings() {
           </p>
           <p className="mt-2 text-xs leading-6 text-slate-500">
             {browserNotificationsReady
-              ? "Web notification groundwork is ready for later Firebase Cloud Messaging setup."
-              : "Basic browser alerts can work now, but full background push setup still needs Firebase Messaging configuration later."}
+              ? "Desktop alerts are ready for this browser while the portal is open."
+              : "Basic desktop alerts can work now while the portal is open."}
           </p>
         </div>
 

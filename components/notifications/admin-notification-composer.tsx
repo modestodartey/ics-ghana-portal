@@ -5,8 +5,8 @@ import { useAuth } from "@/components/auth/auth-provider";
 import { useNotificationAlerts } from "@/components/notifications/notification-alert-provider";
 import { SectionCard } from "@/components/ui/section-card";
 import { getSchoolEmailErrorMessage } from "@/lib/auth";
+import { createAdminNotification } from "@/services/admin-notifications";
 import {
-  createNotification,
   notificationAudienceOptions,
   parseTargetEmails,
   validateTargetEmails
@@ -67,25 +67,46 @@ export function AdminNotificationComposer() {
     setIsSubmitting(true);
 
     try {
-      await createNotification(
+      const result = await createAdminNotification(
         {
           title: formState.title,
           body: formState.body,
           audienceType: formState.audienceType,
           targetEmails
-        },
-        user
+        }
       );
 
       setFormState(initialFormState);
-      setSuccess("Notification sent successfully.");
+
+      if (result.emailWarning) {
+        setError(
+          result.emailSentCount > 0
+            ? `Notification sent in the portal. ${result.emailSentCount} email notification${
+                result.emailSentCount === 1 ? "" : "s"
+              } sent, but ${result.emailWarning}`
+            : `Notification sent in the portal, but no email was sent. ${result.emailWarning}`
+        );
+      } else {
+        setSuccess(
+          `Notification sent successfully. ${result.emailSentCount} email notification${
+            result.emailSentCount === 1 ? "" : "s"
+          } sent.`
+        );
+      }
+
       pushToast({
-        title: "Notification sent",
-        message: "Your notification was sent successfully.",
-        tone: "success"
+        title: result.emailWarning ? "Notification sent with email issue" : "Notification sent",
+        message: result.emailWarning
+          ? result.emailSentCount > 0
+            ? `${result.emailSentCount} email notification${
+                result.emailSentCount === 1 ? "" : "s"
+              } sent. ${result.emailWarning}`
+            : `In-app delivery succeeded, but email delivery did not. ${result.emailWarning}`
+          : "Your notification was sent successfully.",
+        tone: result.emailWarning ? "error" : "success"
       });
-    } catch {
-      setError("We could not send the notification right now. Please try again.");
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "We could not send the notification right now. Please try again.");
     } finally {
       setIsSubmitting(false);
     }

@@ -2,7 +2,9 @@ import {
   addDoc,
   collection,
   doc,
+  getDocs,
   onSnapshot,
+  orderBy,
   query,
   serverTimestamp,
   Timestamp,
@@ -11,7 +13,12 @@ import {
 } from "firebase/firestore";
 import type { FirebaseError } from "firebase/app";
 import { firestore } from "@/lib/firebase";
-import { getGoogleMapsUrl, getLatestLocationRecordForUser } from "@/services/tracking";
+import {
+  getCurrentBrowserLocationSnapshot,
+  getGoogleMapsUrl,
+  getLatestLocationRecordForUser,
+  isLiveLocationRecord
+} from "@/services/tracking";
 import type { AuthUser } from "@/types/auth";
 import type { CreateDeviceInput, DeviceDocument, DeviceLocationSnapshot, DeviceRecord, DeviceStatus } from "@/types/device";
 
@@ -66,24 +73,77 @@ function getCleanString(value: string | null | undefined) {
   return typeof value === "string" ? value.trim() : "";
 }
 
-async function getLocationSnapshotForUser(userUid: string) {
-  try {
-    const latestLocationRecord = await getLatestLocationRecordForUser(userUid);
-
-    if (!latestLocationRecord) {
-      return null;
-    }
-
-    return {
-      lastSeenAt: latestLocationRecord.createdAt,
-      lastKnownLatitude: latestLocationRecord.latitude,
-      lastKnownLongitude: latestLocationRecord.longitude,
-      lastKnownAccuracy: latestLocationRecord.accuracy,
-      lastKnownSource: latestLocationRecord.source
-    } satisfies DeviceLocationSnapshot;
-  } catch {
+function mapLocationSnapshotFromRecord(record: Awaited<ReturnType<typeof getLatestLocationRecordForUser>>) {
+  if (!record) {
     return null;
   }
+
+  return {
+    lastSeenAt: record.createdAt,
+    lastKnownLatitude: record.latitude,
+    lastKnownLongitude: record.longitude,
+    lastKnownAccuracy: record.accuracy,
+    lastKnownSource: record.source
+  } satisfies DeviceLocationSnapshot;
+}
+
+function mapLocationSnapshotFromBrowserSnapshot(
+  snapshot: Awaited<ReturnType<typeof getCurrentBrowserLocationSnapshot>>
+) {
+  return {
+    lastSeenAt: snapshot.capturedAt,
+    lastKnownLatitude: snapshot.latitude,
+    lastKnownLongitude: snapshot.longitude,
+    lastKnownAccuracy: snapshot.accuracy,
+    lastKnownSource: snapshot.source
+  } satisfies DeviceLocationSnapshot;
+}
+
+export async function getLatestSavedDeviceLocationSnapshotForUser(userUid: string) {
+  try {
+    const latestLocationRecord = await getLatestLocationRecordForUser(userUid);
+    return mapLocationSnapshotFromRecord(latestLocationRecord);
+  } catch (error) {
+    console.error("ICS Ghana Portal: latest device location lookup failed.", error);
+    return null;
+  }
+}
+
+export async function resolveDeviceLocationSnapshotForUser(userUid: string) {
+  try {
+    const browserSnapshot = await getCurrentBrowserLocationSnapshot({
+      enableHighAccuracy: true,
+      timeout: 12000,
+      maximumAge: 0
+    });
+
+    return {
+      snapshot: mapLocationSnapshotFromBrowserSnapshot(browserSnapshot),
+      mode: "fresh" as const
+    };
+  } catch (error) {
+    if (process.env.NODE_ENV === "development") {
+      console.info("ICS Ghana Portal: fresh device location capture was unavailable.", error);
+    }
+  }
+
+  const latestSavedSnapshot = await getLatestSavedDeviceLocationSnapshotForUser(userUid);
+
+  if (latestSavedSnapshot) {
+    return {
+      snapshot: latestSavedSnapshot,
+      mode: "latest_saved" as const
+    };
+  }
+
+  return {
+    snapshot: null,
+    mode: "none" as const
+  };
+}
+
+async function getLocationSnapshotForUser(userUid: string) {
+  return (await getLatestSavedDeviceLocationSnapshotForUser(userUid)) ?? null;
 }
 
 function sortDevices(devices: DeviceRecord[]) {
@@ -95,8 +155,14 @@ function sortDevices(devices: DeviceRecord[]) {
   });
 }
 
-export async function createDevice(input: CreateDeviceInput, user: AuthUser) {
-  const locationSnapshot = (await getLocationSnapshotForUser(user.uid)) ?? getEmptyLocationSnapshot();
+export async function createDevice(
+  input: CreateDeviceInput,
+  user: AuthUser,
+  preferredLocationSnapshot?: DeviceLocationSnapshot | null,
+  preferredLocationMode: "fresh" | "latest_saved" | "none" = preferredLocationSnapshot ? "fresh" : "none"
+) {
+  const locationSnapshot =
+    preferredLocationSnapshot ?? (await getLocationSnapshotForUser(user.uid)) ?? getEmptyLocationSnapshot();
   const ownerUid = getCleanString(user.uid);
   const ownerEmail = getCleanString(user.email).toLowerCase();
   const displayName = getCleanString(user.displayName) || ownerEmail;
@@ -112,6 +178,16 @@ export async function createDevice(input: CreateDeviceInput, user: AuthUser) {
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp()
   });
+
+  return {
+    linkedLocation: locationSnapshot.lastKnownLatitude !== null && locationSnapshot.lastKnownLongitude !== null,
+    linkedLocationMode:
+      locationSnapshot.lastKnownLatitude !== null && locationSnapshot.lastKnownLongitude !== null
+        ? preferredLocationMode === "none"
+          ? "latest_saved"
+          : preferredLocationMode
+        : "none"
+  };
 }
 
 export function getFriendlyDeviceErrorMessage(error: unknown) {
@@ -156,6 +232,27 @@ export function subscribeToUserDevices(
   );
 }
 
+export function subscribeToAllDevices(
+  onData: (devices: DeviceRecord[]) => void,
+  onError: (message: string) => void
+) {
+  const devicesQuery = query(devicesCollection, orderBy("updatedAt", "desc"));
+
+  return onSnapshot(
+    devicesQuery,
+    (snapshot) => {
+      const devices = snapshot.docs.map((snapshotDocument) =>
+        mapDeviceDocument(snapshotDocument.id, snapshotDocument.data() as Partial<DeviceDocument>)
+      );
+
+      onData(sortDevices(devices));
+    },
+    () => {
+      onError("We could not load devices right now.");
+    }
+  );
+}
+
 export async function updateDeviceStatus(deviceId: string, ownerUid: string, status: DeviceStatus) {
   const locationSnapshot = await getLocationSnapshotForUser(ownerUid);
   const updatePayload: Record<string, unknown> = {
@@ -172,6 +269,32 @@ export async function updateDeviceStatus(deviceId: string, ownerUid: string, sta
   }
 
   await updateDoc(doc(firestore, "devices", deviceId), updatePayload);
+}
+
+export async function syncMissingDevicesLocationForOwner(
+  ownerUid: string,
+  locationSnapshot: DeviceLocationSnapshot
+) {
+  const devicesSnapshot = await getDocs(query(devicesCollection, where("ownerUid", "==", ownerUid)));
+  const missingDevices = devicesSnapshot.docs.filter((snapshotDocument) => {
+    const data = snapshotDocument.data() as Partial<DeviceDocument>;
+    return data.status === "missing";
+  });
+
+  if (missingDevices.length === 0) {
+    return 0;
+  }
+
+  await Promise.all(
+    missingDevices.map((snapshotDocument) =>
+      updateDoc(doc(firestore, "devices", snapshotDocument.id), {
+        ...locationSnapshot,
+        updatedAt: serverTimestamp()
+      })
+    )
+  );
+
+  return missingDevices.length;
 }
 
 export function formatDeviceDate(date: Date | null) {
@@ -217,4 +340,36 @@ export function getGoogleMapsLocationUrl(device: DeviceRecord) {
   }
 
   return getGoogleMapsUrl(device.lastKnownLatitude!, device.lastKnownLongitude!);
+}
+
+export function isDeviceLocationLive(device: DeviceRecord) {
+  if (!device.lastSeenAt || !hasSavedDeviceLocation(device)) {
+    return false;
+  }
+
+  return isLiveLocationRecord(
+    {
+      id: device.id,
+      userUid: device.ownerUid,
+      userEmail: device.ownerEmail,
+      displayName: device.displayName,
+      latitude: device.lastKnownLatitude!,
+      longitude: device.lastKnownLongitude!,
+      accuracy: device.lastKnownAccuracy,
+      createdAt: device.lastSeenAt,
+      source: "web",
+      active: true,
+      sessionId: null,
+      trackingMode: "automatic"
+    },
+    Date.now()
+  );
+}
+
+export function getDeviceLocationStateLabel(device: DeviceRecord) {
+  if (!hasSavedDeviceLocation(device)) {
+    return "No location saved yet";
+  }
+
+  return isDeviceLocationLive(device) ? "Live now" : "Last known";
 }

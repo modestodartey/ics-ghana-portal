@@ -8,7 +8,7 @@ export function SiteFooter() {
           <p className="text-sm font-semibold uppercase tracking-[0.22em] text-brand-700">ICS Ghana</p>
           <p className="font-display mt-2 text-2xl text-slate-900">International Community School</p>
           <p className="mt-3 max-w-md text-sm leading-7 text-slate-600">
-            A polished digital front door for an academic community focused on excellence, discipline, and a welcoming learning environment.
+            A school portal for communication, notifications, location sharing, and student device support across the ICS Ghana community.
           </p>
         </div>
         <div>
@@ -26,11 +26,13 @@ export function SiteFooter() {
           </div>
         </div>
         <div>
-          <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Brand asset</h2>
-          <p className="mt-3 text-sm leading-6 text-slate-600">
-            Replace <span className="font-semibold text-slate-800">/public/ics-ghana-logo.svg</span> with the official school logo when a final asset is available.
-          </p>
-          <p className="mt-4 text-sm leading-6 text-slate-500">Designed to stay clear, calm, and professional on both phones and laptops.</p>
+          <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">School highlights</h2>
+          <div className="mt-3 space-y-3 text-sm leading-6 text-slate-600">
+            <p>Founded in 2000</p>
+            <p>Over 2,100 students</p>
+            <p>40+ nationalities</p>
+            <p>British System of Education</p>
+          </div>
         </div>
       </div>
     </footer>

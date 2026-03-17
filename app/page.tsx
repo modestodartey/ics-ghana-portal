@@ -22,10 +22,10 @@ export default function HomePage() {
                 International Community School
               </p>
               <h1 className="font-display max-w-4xl text-4xl leading-[1.05] text-slate-900 sm:text-5xl lg:text-6xl">
-                A calm, modern portal for school communication, student support, and everyday visibility.
+                One school portal for communication, notifications, location sharing, and student device support.
               </h1>
               <p className="max-w-2xl text-base leading-8 text-slate-600 sm:text-lg">
-                ICS Ghana&apos;s portal brings together notifications, location sharing, and Find My Device Lite in one welcoming experience that works well on phones and laptops.
+                ICS Ghana brings together essential daily tools in a clear, welcoming experience that works well on phones and laptops for both students and administrators.
               </p>
             </div>
 
@@ -41,7 +41,7 @@ export default function HomePage() {
                 href="/student"
                 className="inline-flex items-center justify-center rounded-full border border-brand-200 bg-white px-6 py-3 text-sm font-semibold text-brand-700 hover:border-brand-500"
               >
-                Preview Student Portal
+                Open student portal
               </Link>
             </div>
           </div>
@@ -50,28 +50,33 @@ export default function HomePage() {
             <div className="rounded-[1.9rem] bg-gradient-to-br from-brand-700 via-brand-600 to-brand-900 p-6 text-white shadow-soft sm:p-8">
               <BrandLogo inverted className="items-start" />
               <div className="mt-10 space-y-4">
-                <p className="text-sm uppercase tracking-[0.2em] text-brand-100">School direction</p>
+                <p className="text-sm uppercase tracking-[0.2em] text-brand-100">School community</p>
                 <p className="font-display text-2xl leading-tight sm:text-3xl">Training tomorrow&apos;s leaders today.</p>
                 <p className="text-sm leading-7 text-brand-50/90">
-                  The portal is designed to support students and administrators with clear tools, calm structure, and room to grow.
+                  Founded in 2000, ICS Ghana serves a diverse learning community with a British System of Education and a strong culture of care.
                 </p>
               </div>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2">
               <SectionCard
-                title="25+ Years"
-                description="A mature school identity deserves a mature and polished digital experience."
+                title="Founded in 2000"
+                description="A well-established school community with a clear academic identity."
                 className="bg-brand-50/80"
               />
               <SectionCard
-                title="British System"
-                description="The visual language stays structured, calm, and academically grounded."
+                title="2,100+ Students"
+                description="The portal is designed to support communication at meaningful school scale."
                 className="bg-white"
               />
               <SectionCard
-                title="Green Campus"
-                description="The palette and atmosphere are drawn from ICS Ghana&apos;s calm green identity."
+                title="40+ Nationalities"
+                description="A diverse international community benefits from clear and inclusive communication."
+                className="bg-white"
+              />
+              <SectionCard
+                title="British System"
+                description="A calm and structured learning environment reflected in the portal experience."
                 className="bg-brand-50/80"
               />
             </div>
@@ -82,61 +87,65 @@ export default function HomePage() {
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <PortalCard
           title="Student Portal"
-          description="A refined space for students to access messages, updates, and future school services."
+          description="A clear student space for school updates, location sharing, and Find My Device support."
           href="/student"
-          status="Preview"
+          status="Students"
         />
         <PortalCard
           title="Admin Portal"
-          description="A structured workspace for oversight, communication, and school administration."
+          description="An organized workspace for communication, oversight, and account management."
           href="/admin"
-          status="Preview"
+          status="Administration"
         />
         <PortalCard
           title="Notifications"
-          description="In-app announcements help students and administrators stay informed with clear school-wide communication."
+          description="In-app alerts help students and administrators stay informed with timely school communication."
           href="/student"
-          status="Live"
+          status="Communication"
         />
         <PortalCard
-          title="Find My Device Lite"
-          description="Students can register devices, mark one as missing, and open the latest saved location in Google Maps."
+          title="Find My Device"
+          description="Students can register devices, mark one as missing, and review the latest saved location when available."
           href="/student"
-          status="MVP"
+          status="Support"
         />
       </section>
 
       <section className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
         <SectionCard
-          title="Built around communication, awareness, and student support"
-          description="The current portal brings together the most useful early tools in one consistent experience so school users can move quickly without confusion."
+          title="Built for everyday school communication"
+          description="The portal keeps the most important student and administrator tasks in one calm, consistent experience."
           className="bg-white/95"
         >
           <div className="grid gap-3 text-sm text-slate-600 sm:grid-cols-2">
             <div className="rounded-2xl bg-brand-50 p-4">
-              <p className="font-semibold text-slate-900">Clear daily flow</p>
+              <p className="font-semibold text-slate-900">Reliable updates</p>
               <p className="mt-2 leading-6">
-                Notifications, tracking, and device support each have a visible place in the student experience.
+                Notifications, tracking, and device support each have a clear place inside the portal.
               </p>
             </div>
             <div className="rounded-2xl bg-brand-50 p-4">
-              <p className="font-semibold text-slate-900">Responsive balance</p>
+              <p className="font-semibold text-slate-900">Responsive access</p>
               <p className="mt-2 leading-6">
-                Cards, actions, and page sections stay easy to scan on both phones and laptops.
+                Important actions stay easy to find on both phones and laptops.
               </p>
             </div>
           </div>
         </SectionCard>
 
         <SectionCard
-          title="School-oriented tagline"
-          description="The interface keeps a professional, welcoming tone inspired by ICS Ghana&apos;s school identity."
+          title="At a glance"
+          description="A concise view of the school context behind the portal."
           className="bg-gradient-to-br from-white to-brand-50"
         >
-          <p className="font-display text-2xl leading-tight text-slate-900">Training tomorrow&apos;s leaders today.</p>
-          <p className="mt-3 text-sm leading-7 text-slate-600">
-            The current portal stays polished and future-ready while keeping the first student and admin tools easy to use.
-          </p>
+          <div className="space-y-3 text-sm leading-7 text-slate-600">
+            <p>
+              ICS Ghana serves an international student community with over 2,100 students and more than 40 nationalities.
+            </p>
+            <p>
+              The portal supports communication, location sharing, and student device help in a practical web-first format.
+            </p>
+          </div>
         </SectionCard>
       </section>
 
@@ -150,13 +159,13 @@ export default function HomePage() {
         <div id="tracking" className="scroll-mt-8">
           <SectionCard
             title="Tracking"
-            description="Students can share their current location when needed, and administrators can review the latest saved records in a simple web-first view."
+            description="Students can share their current location when needed, and administrators can review the latest saved records in a clear web-based view."
           />
         </div>
         <div id="find-my-device" className="scroll-mt-8">
           <SectionCard
-            title="Find My Device Lite"
-            description="Students can register devices, mark one as missing, and open the latest saved location in Google Maps when location data is available."
+            title="Find My Device"
+            description="Students can register devices, mark one as missing, and check the latest saved location when location data is available."
           />
         </div>
       </section>

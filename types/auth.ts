@@ -1,4 +1,4 @@
-export type UserRole = "admin" | "student";
+export type UserRole = "admin" | "student" | "staff";
 
 export type AuthUser = {
   uid: string;
@@ -13,6 +13,7 @@ export type FirestoreUserDocument = {
   role: UserRole;
   displayName: string;
   createdAt: unknown;
+  isActive?: boolean;
 };
 
 export type AuthStatus = "loading" | "authenticated" | "unauthenticated";

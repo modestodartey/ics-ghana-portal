@@ -3,3 +3,4 @@ node_modules/
 .env.local
 .vercel/
 *.log
+ics-ghana-portal-firebase-adminsdk-fbsvc-bfff908390.json

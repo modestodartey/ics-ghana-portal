@@ -20,6 +20,10 @@ export async function getUserProfileByUid(
     throw new Error(getMissingRoleErrorMessage());
   }
 
+  if (data.isActive === false) {
+    throw new Error("This account has been disabled. Please contact an administrator.");
+  }
+
   const email =
     typeof data.email === "string" && data.email.trim()
       ? normalizeEmail(data.email)

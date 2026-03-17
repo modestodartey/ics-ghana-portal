@@ -15,14 +15,14 @@ function BrandLogoContent({ compact, inverted }: { compact?: boolean; inverted?:
       <div
         className={cn(
           "relative shrink-0 overflow-hidden rounded-full border border-brand-200/70 bg-white shadow-soft",
-          compact ? "h-11 w-11 sm:h-12 sm:w-12" : "h-20 w-20 sm:h-24 sm:w-24"
+          compact ? "h-14 w-14 sm:h-16 sm:w-16" : "h-20 w-20 sm:h-24 sm:w-24"
         )}
       >
         <Image
           src="/ics-ghana-logo.svg"
-          alt="ICS Ghana logo placeholder"
+          alt="ICS Ghana logo"
           fill
-          sizes={compact ? "48px" : "96px"}
+          sizes={compact ? "64px" : "96px"}
           className="object-cover"
           priority
         />
@@ -40,7 +40,7 @@ function BrandLogoContent({ compact, inverted }: { compact?: boolean; inverted?:
           className={cn(
             "font-display",
             inverted ? "text-white" : "text-slate-900",
-            compact ? "text-base leading-tight sm:text-[1.05rem]" : "text-2xl leading-tight sm:text-3xl"
+            compact ? "text-lg leading-tight sm:text-[1.18rem]" : "text-2xl leading-tight sm:text-3xl"
           )}
         >
           International Community School

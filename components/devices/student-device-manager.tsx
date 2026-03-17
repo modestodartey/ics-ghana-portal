@@ -6,15 +6,22 @@ import { SectionCard } from "@/components/ui/section-card";
 import {
   createDevice,
   formatDeviceDate,
+  getDeviceLocationStateLabel,
   formatDeviceStatus,
   getFriendlyDeviceErrorMessage,
   getDeviceStatusTone,
   getGoogleMapsLocationUrl,
   hasSavedDeviceLocation,
+  isDeviceLocationLive,
+  resolveDeviceLocationSnapshotForUser,
   subscribeToUserDevices,
   updateDeviceStatus
 } from "@/services/devices";
-import { formatCoordinates } from "@/services/tracking";
+import {
+  formatCoordinates,
+  formatAccuracyLabel,
+  saveLocationRecord
+} from "@/services/tracking";
 import type { DeviceRecord, DeviceStatus } from "@/types/device";
 
 type DeviceStatusMessage = {
@@ -27,6 +34,18 @@ const DEVICE_STATUS_ACTIONS: Record<DeviceStatus, { label: string; nextStatus: D
   missing: { label: "Mark as found", nextStatus: "found" },
   found: { label: "Set active", nextStatus: "active" }
 };
+
+const DEVICE_TYPE_BADGES: Record<string, string> = {
+  laptop: "L",
+  tablet: "T",
+  ipad: "T",
+  phone: "P",
+  watch: "W"
+};
+
+function getDeviceTypeBadge(deviceType: string) {
+  return DEVICE_TYPE_BADGES[deviceType.trim().toLowerCase()] ?? "D";
+}
 
 export function StudentDeviceManager() {
   const { user } = useAuth();
@@ -75,17 +94,46 @@ export function StudentDeviceManager() {
     setMessage(null);
 
     try {
-      await createDevice(
+      const locationResolution = await resolveDeviceLocationSnapshotForUser(user.uid);
+      const preferredLocationSnapshot = locationResolution.snapshot;
+
+      if (locationResolution.mode === "fresh" && preferredLocationSnapshot) {
+        try {
+          await saveLocationRecord({
+            userUid: user.uid,
+            userEmail: user.email,
+            displayName: user.displayName,
+            latitude: preferredLocationSnapshot.lastKnownLatitude!,
+            longitude: preferredLocationSnapshot.lastKnownLongitude!,
+            accuracy: preferredLocationSnapshot.lastKnownAccuracy,
+            trackingMode: "automatic"
+          });
+        } catch (error) {
+          console.error("ICS Ghana Portal: device registration location snapshot save failed.", error);
+        }
+      }
+
+      const result = await createDevice(
         {
           deviceName,
           deviceType
         },
-        user
+        user,
+        preferredLocationSnapshot,
+        locationResolution.mode
       );
 
       setDeviceName("");
       setDeviceType("");
-      setMessage({ tone: "success", message: "Your device has been registered successfully." });
+      setMessage({
+        tone: "success",
+        message:
+          result.linkedLocationMode === "fresh"
+            ? "Your device has been registered and linked to your current location."
+            : result.linkedLocationMode === "latest_saved"
+              ? "Your device has been registered and linked to your latest saved location."
+              : "Your device has been registered successfully. No location has been saved yet."
+      });
     } catch (error) {
       const errorMessage = getFriendlyDeviceErrorMessage(error);
       setMessage({
@@ -119,7 +167,7 @@ export function StudentDeviceManager() {
 
   return (
     <SectionCard
-      title="Find My Device Lite"
+      title="Find My Device"
       description="Register your school-use devices, mark one as missing when needed, and review the latest saved location linked to your account."
       className="bg-white/95"
     >
@@ -175,7 +223,7 @@ export function StudentDeviceManager() {
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-brand-700">Your registered devices</p>
               <p className="mt-1 text-sm leading-6 text-slate-600">
-                Last known location is based on your most recent manual location share in the student portal.
+                Each device keeps its latest saved location when one is available for your session.
               </p>
             </div>
           </div>
@@ -184,7 +232,7 @@ export function StudentDeviceManager() {
 
           {!isLoading && devices.length === 0 ? (
             <div className="mt-4 rounded-2xl bg-brand-50/70 p-4 text-sm leading-6 text-slate-600">
-              No devices have been registered yet. Add a device above to start using Find My Device Lite.
+              No devices have been registered yet. Add a device above to start using Find My Device.
             </div>
           ) : null}
 
@@ -192,21 +240,33 @@ export function StudentDeviceManager() {
             {devices.map((device) => {
               const action = DEVICE_STATUS_ACTIONS[device.status];
               const mapsUrl = getGoogleMapsLocationUrl(device);
+              const locationStateLabel = getDeviceLocationStateLabel(device);
+              const isLiveNow = isDeviceLocationLive(device);
 
               return (
                 <article key={device.id} className="rounded-[1.5rem] border border-brand-100 bg-brand-50/40 p-4 shadow-soft">
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     <div className="space-y-3">
                       <div className="flex flex-wrap items-center gap-2">
+                        <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white text-sm font-semibold text-brand-700 shadow-soft">
+                          {getDeviceTypeBadge(device.deviceType)}
+                        </span>
                         <h3 className="font-display text-xl text-slate-900">{device.deviceName}</h3>
                         <span
                           className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] ${getDeviceStatusTone(device.status)}`}
                         >
                           {formatDeviceStatus(device.status)}
                         </span>
+                        <span
+                          className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] ${
+                            isLiveNow ? "bg-emerald-50 text-emerald-700" : "bg-white text-slate-600"
+                          }`}
+                        >
+                          {locationStateLabel}
+                        </span>
                       </div>
 
-                      <div className="grid gap-3 text-sm text-slate-600 sm:grid-cols-2">
+                      <div className="grid gap-3 text-sm text-slate-600 sm:grid-cols-3">
                         <div className="rounded-2xl bg-white p-3">
                           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-700">Device type</p>
                           <p className="mt-2">{device.deviceType}</p>
@@ -215,6 +275,10 @@ export function StudentDeviceManager() {
                           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-700">Last seen</p>
                           <p className="mt-2">{formatDeviceDate(device.lastSeenAt)}</p>
                         </div>
+                        <div className="rounded-2xl bg-white p-3">
+                          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-700">Location status</p>
+                          <p className="mt-2">{locationStateLabel}</p>
+                        </div>
                       </div>
 
                       <div className="rounded-2xl bg-white p-3 text-sm text-slate-600">
@@ -222,15 +286,13 @@ export function StudentDeviceManager() {
                         {hasSavedDeviceLocation(device) ? (
                           <div className="mt-2 space-y-2">
                             <p>{formatCoordinates(device.lastKnownLatitude!, device.lastKnownLongitude!)}</p>
-                            <p>
-                              Accuracy:{" "}
-                              {device.lastKnownAccuracy ? `${Math.round(device.lastKnownAccuracy)} meters` : "Unavailable"}
-                            </p>
+                            <p>Accuracy: {formatAccuracyLabel(device.lastKnownAccuracy)}</p>
+                            <p>Last updated: {formatDeviceDate(device.lastSeenAt)}</p>
                             <p>Source: {device.lastKnownSource ?? "Unavailable"}</p>
                           </div>
                         ) : (
                           <p className="mt-2 leading-6">
-                            No location has been linked to this device yet. Share your current location from the tracking section to improve the latest known view.
+                            No location has been linked to this device yet. The next saved portal location will update this view automatically.
                           </p>
                         )}
                       </div>
@@ -245,6 +307,14 @@ export function StudentDeviceManager() {
                       >
                         {actionDeviceId === device.id ? "Updating..." : action.label}
                       </button>
+
+                      {device.status === "missing" ? (
+                        <p className="rounded-2xl bg-white px-4 py-3 text-sm leading-6 text-slate-600">
+                          {isLiveNow
+                            ? "This missing device is updating from the active browser session right now."
+                            : "This missing device is showing its latest saved location."}
+                        </p>
+                      ) : null}
 
                       {mapsUrl ? (
                         <a

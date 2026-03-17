@@ -1,21 +1,21 @@
 import {
-  addDoc,
-  arrayUnion,
   collection,
+  deleteDoc,
   doc,
   onSnapshot,
   orderBy,
   query,
-  serverTimestamp,
+  runTransaction,
   Timestamp,
   updateDoc
 } from "firebase/firestore";
 import { firestore } from "@/lib/firebase";
 import { isSchoolEmail, normalizeEmail } from "@/lib/auth";
 import type {
-  CreateNotificationInput,
   NotificationAudienceOption,
   NotificationDocument,
+  NotificationReadDetailDocument,
+  NotificationReadDetailRecord,
   NotificationRecord,
   NotificationViewer
 } from "@/types/notification";
@@ -27,8 +27,18 @@ export const notificationAudienceOptions: NotificationAudienceOption[] = [
   { label: "All users", value: "all_users" },
   { label: "All students", value: "all_students" },
   { label: "All admins", value: "all_admins" },
+  { label: "All staff", value: "all_staff" },
   { label: "Specific email(s)", value: "specific_emails" }
 ];
+
+function mapReadDetail(data: Partial<NotificationReadDetailDocument>): NotificationReadDetailRecord {
+  return {
+    uid: typeof data.uid === "string" ? data.uid : "",
+    email: typeof data.email === "string" ? data.email : "",
+    displayName: typeof data.displayName === "string" ? data.displayName : "",
+    readAt: toDate(data.readAt)
+  };
+}
 
 function mapNotificationDocument(id: string, data: Partial<NotificationDocument>): NotificationRecord {
   return {
@@ -40,8 +50,17 @@ function mapNotificationDocument(id: string, data: Partial<NotificationDocument>
     createdByUid: typeof data.createdByUid === "string" ? data.createdByUid : "",
     createdByEmail: typeof data.createdByEmail === "string" ? data.createdByEmail : "",
     createdAt: toDate(data.createdAt),
+    updatedAt: toDate(data.updatedAt),
     active: data.active !== false,
-    readBy: Array.isArray(data.readBy) ? data.readBy.filter(isStringValue) : []
+    readBy: Array.isArray(data.readBy) ? data.readBy.filter(isStringValue) : [],
+    readDetails: Array.isArray(data.readDetails)
+      ? data.readDetails
+          .map((entry) => mapReadDetail((entry ?? {}) as Partial<NotificationReadDetailDocument>))
+          .filter((entry) => entry.uid && entry.readAt)
+      : [],
+    emailSentCount: typeof data.emailSentCount === "number" ? data.emailSentCount : 0,
+    emailFailedCount: typeof data.emailFailedCount === "number" ? data.emailFailedCount : 0,
+    emailAttemptedAt: toDate(data.emailAttemptedAt)
   };
 }
 
@@ -50,7 +69,13 @@ function isStringValue(value: unknown): value is string {
 }
 
 function isNotificationAudienceType(value: unknown): value is NotificationRecord["audienceType"] {
-  return value === "all_users" || value === "all_students" || value === "all_admins" || value === "specific_emails";
+  return (
+    value === "all_users" ||
+    value === "all_students" ||
+    value === "all_admins" ||
+    value === "all_staff" ||
+    value === "specific_emails"
+  );
 }
 
 function toDate(value: unknown) {
@@ -80,6 +105,8 @@ export function formatAudienceLabel(notification: NotificationRecord) {
       return "All students";
     case "all_admins":
       return "All admins";
+    case "all_staff":
+      return "All staff";
     case "specific_emails":
       return notification.targetEmails.length > 0
         ? `Specific email(s): ${notification.targetEmails.join(", ")}`
@@ -116,6 +143,8 @@ export function canUserViewNotification(notification: NotificationRecord, user: 
       return user.role === "student";
     case "all_admins":
       return user.role === "admin";
+    case "all_staff":
+      return user.role === "staff";
     case "specific_emails":
       return notification.targetEmails.includes(normalizeEmail(user.email));
     default:
@@ -124,21 +153,7 @@ export function canUserViewNotification(notification: NotificationRecord, user: 
 }
 
 export function hasUserReadNotification(notification: NotificationRecord, uid: string) {
-  return notification.readBy.includes(uid);
-}
-
-export async function createNotification(input: CreateNotificationInput, user: AuthUser) {
-  await addDoc(notificationsCollection, {
-    title: input.title.trim(),
-    body: input.body.trim(),
-    audienceType: input.audienceType,
-    targetEmails: input.targetEmails.map((email) => normalizeEmail(email)),
-    createdByUid: user.uid,
-    createdByEmail: user.email,
-    createdAt: serverTimestamp(),
-    active: true,
-    readBy: []
-  });
+  return notification.readBy.includes(uid) || notification.readDetails.some((entry) => entry.uid === uid);
 }
 
 export function subscribeToNotifications(
@@ -162,8 +177,61 @@ export function subscribeToNotifications(
   );
 }
 
-export async function markNotificationAsRead(notificationId: string, uid: string) {
-  await updateDoc(doc(firestore, "notifications", notificationId), {
-    readBy: arrayUnion(uid)
+export async function markNotificationAsRead(notificationId: string, user: Pick<AuthUser, "uid" | "email" | "displayName">) {
+  const notificationReference = doc(firestore, "notifications", notificationId);
+
+  await runTransaction(firestore, async (transaction) => {
+    const snapshot = await transaction.get(notificationReference);
+
+    if (!snapshot.exists()) {
+      throw new Error("This notification could not be found.");
+    }
+
+    const data = snapshot.data() as Partial<NotificationDocument>;
+    const readBy = Array.isArray(data.readBy) ? data.readBy.filter(isStringValue) : [];
+    const readDetails = Array.isArray(data.readDetails)
+      ? data.readDetails.map((entry) => mapReadDetail((entry ?? {}) as Partial<NotificationReadDetailDocument>))
+      : [];
+
+    if (readBy.includes(user.uid) || readDetails.some((entry) => entry.uid === user.uid)) {
+      return;
+    }
+
+    transaction.update(notificationReference, {
+      readBy: [...readBy, user.uid],
+      readDetails: [
+        ...readDetails.map((entry) => ({
+          uid: entry.uid,
+          email: entry.email,
+          displayName: entry.displayName,
+          readAt: entry.readAt ?? Timestamp.now()
+        })),
+        {
+          uid: user.uid,
+          email: normalizeEmail(user.email),
+          displayName: user.displayName,
+          readAt: Timestamp.now()
+        }
+      ]
+    });
   });
+}
+
+export async function deleteNotification(notificationId: string) {
+  await deleteDoc(doc(firestore, "notifications", notificationId));
+}
+
+export function getNotificationViewedCount(notification: NotificationRecord) {
+  return notification.readDetails.length > 0 ? notification.readDetails.length : notification.readBy.length;
+}
+
+export function formatNotificationReadDate(date: Date | null) {
+  if (!date) {
+    return "Read time unavailable";
+  }
+
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short"
+  }).format(date);
 }

@@ -1,19 +1,21 @@
 export const USER_ROLES = {
   admin: "admin",
-  student: "student"
+  student: "student",
+  staff: "staff"
 } as const;
 
 export type UserRole = (typeof USER_ROLES)[keyof typeof USER_ROLES];
 
-export const PHASE_ONE_ROLES: UserRole[] = [USER_ROLES.admin, USER_ROLES.student];
+export const PHASE_ONE_ROLES: UserRole[] = [USER_ROLES.admin, USER_ROLES.student, USER_ROLES.staff];
 
 export const DASHBOARD_ROUTES: Record<UserRole, string> = {
   admin: "/admin",
-  student: "/student"
+  student: "/student",
+  staff: "/staff"
 };
 
 export function isSupportedRole(role: unknown): role is UserRole {
-  return role === USER_ROLES.admin || role === USER_ROLES.student;
+  return role === USER_ROLES.admin || role === USER_ROLES.student || role === USER_ROLES.staff;
 }
 
 export const ALLOWED_EMAIL_DOMAINS = ["icsghana.info", "gmail.com"] as const;
@@ -69,5 +71,12 @@ export function getFriendlyAuthErrorMessage(error: unknown, fallbackMessage?: st
 }
 
 export function getRoleLabel(role: UserRole) {
-  return role === USER_ROLES.admin ? "Admin" : "Student";
+  switch (role) {
+    case USER_ROLES.admin:
+      return "Admin";
+    case USER_ROLES.staff:
+      return "Staff";
+    default:
+      return "Student";
+  }
 }

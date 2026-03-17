@@ -16,6 +16,7 @@ type QuickLinkItem = {
   label: string;
   adminHref: string | null;
   studentHref: string;
+  staffHref: string | null;
 };
 
 const QUICK_LINKS: QuickLinkItem[] = [
@@ -23,19 +24,22 @@ const QUICK_LINKS: QuickLinkItem[] = [
     id: "notifications",
     label: "Notifications",
     adminHref: "/admin#notifications",
-    studentHref: "/student#notifications"
+    studentHref: "/student#notifications",
+    staffHref: "/staff#notifications"
   },
   {
     id: "tracking",
     label: "Tracking",
     adminHref: "/admin#tracking",
-    studentHref: "/student#tracking"
+    studentHref: "/student#tracking",
+    staffHref: null
   },
   {
     id: "find-my-device",
     label: "Find My Device",
     adminHref: null,
-    studentHref: "/student#find-my-device"
+    studentHref: "/student#find-my-device",
+    staffHref: null
   }
 ];
 
@@ -46,6 +50,10 @@ function getQuickLinkHref(item: QuickLinkItem, role: UserRole | null) {
 
   if (role === "admin") {
     return item.adminHref;
+  }
+
+  if (role === "staff") {
+    return item.staffHref;
   }
 
   return item.studentHref;
@@ -66,7 +74,7 @@ export function PortalQuickLinks({ className, disabledClassName }: PortalQuickLi
             <span
               key={item.id}
               aria-disabled="true"
-              title="Find My Device Lite is currently available in the student portal only."
+      title="Find My Device is currently available in the student portal only."
               className={cn("cursor-default opacity-55", className, disabledClassName)}
             >
               {item.label}

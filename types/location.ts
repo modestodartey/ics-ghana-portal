@@ -1,3 +1,5 @@
+export type TrackingMode = "manual" | "automatic";
+
 export type LocationRecordDocument = {
   userUid: string;
   userEmail: string;
@@ -8,6 +10,8 @@ export type LocationRecordDocument = {
   createdAt: unknown;
   source: "web";
   active: boolean;
+  sessionId: string | null;
+  trackingMode: TrackingMode;
 };
 
 export type LocationRecord = {
@@ -21,6 +25,8 @@ export type LocationRecord = {
   createdAt: Date | null;
   source: "web";
   active: boolean;
+  sessionId: string | null;
+  trackingMode: TrackingMode;
 };
 
 export type SaveLocationInput = {
@@ -30,6 +36,16 @@ export type SaveLocationInput = {
   latitude: number;
   longitude: number;
   accuracy: number | null;
+  sessionId?: string | null;
+  trackingMode?: TrackingMode;
+};
+
+export type BrowserLocationSnapshot = {
+  latitude: number;
+  longitude: number;
+  accuracy: number | null;
+  capturedAt: Date;
+  source: "web";
 };
 
 export type LocationPermissionState =

@@ -53,7 +53,11 @@ export function StudentNotificationsList() {
     setPendingReadIds((currentIds) => [...currentIds, notificationId]);
 
     try {
-      await markNotificationAsRead(notificationId, user.uid);
+      await markNotificationAsRead(notificationId, {
+        uid: user.uid,
+        email: user.email,
+        displayName: user.displayName
+      });
     } catch {
       setError("We could not update the read status right now. Please try again.");
     } finally {

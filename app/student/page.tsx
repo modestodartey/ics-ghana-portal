@@ -10,46 +10,70 @@ export default function StudentPage() {
       allowedRole="student"
       eyebrow="ICS Ghana Student Portal"
       title="Student dashboard"
-      description="Your space for school updates, location sharing, and device support."
+      description="Your space for school updates, live session location sharing, and device support."
     >
+      <div id="tracking" className="scroll-mt-8">
+        <StudentLocationShare />
+      </div>
       <section className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
         <SectionCard
-          title="Student landing area"
-          description="A calm and welcoming space helps students find important updates and tools without extra clutter."
+          title="Student essentials"
+          description="Keep up with school updates, current session location sharing, and device support from one simple dashboard."
           className="bg-gradient-to-br from-white to-brand-50"
         >
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="rounded-2xl bg-white p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-brand-700">Access</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-brand-700">First step</p>
               <p className="mt-2 text-sm leading-6 text-slate-600">
-                Messages, location sharing, and device tools are gathered here in one place.
+                Enable location access first so the portal can keep your session location current automatically.
               </p>
             </div>
             <div className="rounded-2xl bg-white p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-brand-700">Student support</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-brand-700">Daily use</p>
               <p className="mt-2 text-sm leading-6 text-slate-600">
-                The portal is ready to grow into more school services while staying simple to use on phones and laptops.
+                Review your latest notices, keep device records current, and stay reachable during the school day.
               </p>
             </div>
           </div>
         </SectionCard>
         <SectionCard
-          title="Student experience"
-          description="Each section is designed to stay clear, responsive, and easy to use throughout the school day."
+          title="What you can do here"
+          description="The student portal keeps the most useful actions close at hand."
           className="bg-white/95"
-        />
+        >
+          <div className="grid gap-3">
+            <div className="rounded-2xl bg-brand-50/70 p-4 text-sm leading-6 text-slate-600">
+              Read school notifications as soon as they arrive.
+            </div>
+            <div className="rounded-2xl bg-white p-4 text-sm leading-6 text-slate-600">
+              Keep your session location current once access is approved.
+            </div>
+            <div className="rounded-2xl bg-white p-4 text-sm leading-6 text-slate-600">
+              Register devices and review their latest known location status.
+            </div>
+          </div>
+        </SectionCard>
       </section>
       <section id="notifications" className="grid scroll-mt-8 gap-4 md:grid-cols-2">
         <StudentNotificationsList />
         <SectionCard
-          title="Account Summary"
-          description="Keep your device list up to date and share your location only when needed for school support."
+          title="Student checklist"
+          description="A quick reminder of the most useful portal habits."
           className="bg-white/95"
-        />
+        >
+          <div className="grid gap-3">
+            <div className="rounded-2xl bg-brand-50/70 p-4 text-sm leading-6 text-slate-600">
+              Check unread notifications before leaving the portal.
+            </div>
+            <div className="rounded-2xl bg-white p-4 text-sm leading-6 text-slate-600">
+              Keep device names clear so Find My Device stays easy to use.
+            </div>
+            <div className="rounded-2xl bg-white p-4 text-sm leading-6 text-slate-600">
+              Leave location access enabled during active school sessions when needed.
+            </div>
+          </div>
+        </SectionCard>
       </section>
-      <div id="tracking" className="scroll-mt-8">
-        <StudentLocationShare />
-      </div>
       <div id="find-my-device" className="scroll-mt-8">
         <StudentDeviceManager />
       </div>
