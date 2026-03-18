@@ -93,7 +93,7 @@ export default function HomePage() {
         />
         <PortalCard
           title="Admin Portal"
-          description="An organized workspace for communication, oversight, and account management."
+          description="An organized workspace for communication, oversight, and daily portal operations."
           href="/admin"
           status="Administration"
         />

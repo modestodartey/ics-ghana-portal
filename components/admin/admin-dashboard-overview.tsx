@@ -156,8 +156,8 @@ export function AdminDashboardOverview() {
       <section className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
         <AdminNotificationsList variant="dashboard" limit={4} />
         <SectionCard
-          title="Accounts preview"
-          description="Keep an eye on overall account access, then open the full accounts page when you need to manage records."
+          title="Portal overview"
+          description="Keep an eye on current account totals while the account-management feature stays turned off."
           className="bg-white/95"
         >
           <div className="grid gap-3 sm:grid-cols-2">
@@ -175,18 +175,9 @@ export function AdminDashboardOverview() {
             <p className="mt-4 text-sm leading-6 text-red-700">{accountsError}</p>
           ) : (
             <p className="mt-4 text-sm leading-6 text-slate-600">
-              Use the full accounts page to create users, search records, and update account access.
+              Account creation and account-management tools are temporarily unavailable in the portal.
             </p>
           )}
-
-          <div className="mt-5 flex flex-wrap gap-3">
-            <Link
-              href="/admin/accounts"
-              className="inline-flex items-center justify-center rounded-full bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white shadow-soft hover:bg-brand-700"
-            >
-              View all accounts
-            </Link>
-          </div>
         </SectionCard>
       </section>
 
@@ -209,12 +200,6 @@ export function AdminDashboardOverview() {
               className="inline-flex items-center justify-center rounded-full border border-brand-200 bg-white px-5 py-3 text-sm font-semibold text-brand-700 hover:border-brand-500"
             >
               View all tracking history
-            </Link>
-            <Link
-              href="/admin/accounts"
-              className="inline-flex items-center justify-center rounded-full border border-brand-200 bg-white px-5 py-3 text-sm font-semibold text-brand-700 hover:border-brand-500"
-            >
-              View all accounts
             </Link>
             <Link
               href="/admin/devices"
@@ -249,7 +234,7 @@ export function AdminDashboardOverview() {
             <div className="rounded-2xl bg-white p-4">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-700">Full records</p>
               <p className="mt-2 text-sm leading-6 text-slate-600">
-                Open the full pages when you need filters, history, imports, or account changes.
+                Open the full pages when you need filters, history, and longer record views.
               </p>
             </div>
           </div>
