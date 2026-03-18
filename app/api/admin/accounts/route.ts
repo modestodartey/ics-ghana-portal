@@ -1,13 +1,17 @@
 import { NextResponse } from "next/server";
+import { writeAuditLog } from "@/lib/audit/logging";
 import {
+  createAuthUserAndRecord,
   getFriendlyAccountErrorMessage,
-  mapAccountRecord
+  mapAccountRecord,
+  validateCreateAccountInput
 } from "@/lib/admin/accounts";
 import {
   getFirebaseAdminFirestore,
   getHttpErrorStatus,
   verifyAdminRouteRequest
 } from "@/lib/firebase-admin";
+import type { CreateManagedAccountInput } from "@/types/accounts";
 
 export async function GET(request: Request) {
   try {
@@ -33,11 +37,26 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    await verifyAdminRouteRequest(request);
-    return NextResponse.json(
-      { error: "Account creation is temporarily unavailable." },
-      { status: 503 }
-    );
+    const routeUser = await verifyAdminRouteRequest(request);
+    const body = (await request.json()) as Partial<CreateManagedAccountInput>;
+    const input = validateCreateAccountInput(body);
+    const createdAccount = await createAuthUserAndRecord(input);
+
+    await writeAuditLog({
+      action: "account_created",
+      actorUid: routeUser.uid,
+      actorEmail: routeUser.email,
+      targetType: "account",
+      targetId: createdAccount.uid,
+      targetLabel: createdAccount.email,
+      summary: `Created ${createdAccount.role} account for ${createdAccount.displayName}.`,
+      metadata: {
+        role: createdAccount.role,
+        isActive: createdAccount.isActive
+      }
+    });
+
+    return NextResponse.json({ data: createdAccount });
   } catch (error) {
     return NextResponse.json(
       { error: getFriendlyAccountErrorMessage(error) },
