@@ -7,7 +7,7 @@ export default function AdminPage() {
       allowedRole="admin"
       eyebrow="ICS Ghana Admin"
       title="Administrator dashboard"
-      description="A compact overview of notifications, tracking, accounts, and the most important daily admin actions."
+      description="A compact overview of notifications, tracking, devices, and the most important daily admin actions."
     >
       <AdminDashboardOverview />
     </ProtectedPage>
